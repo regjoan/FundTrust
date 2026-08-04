@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react";
+import { createProgram } from "./components/blockchain/contract";
+import PublicVerification from "./components/blockchain/PublicVerification";
+import QRCodeGenerator from "./components/blockchain/QRCodeGenerator";
 import {
   Shield,
   ChevronRight,
@@ -543,9 +546,8 @@ function FeaturesPage({ onNavigate }: { onNavigate: (s: Screen) => void }) {
             <button
               key={c}
               onClick={() => setActive(c)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
-                active === c ? "bg-[#102A43] text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
-              }`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${active === c ? "bg-[#102A43] text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
+                }`}
             >
               {c}
             </button>
@@ -686,9 +688,8 @@ function WhyBlockchainPage({ onNavigate }: { onNavigate: (s: Screen) => void }) 
                 <button
                   key={p.title}
                   onClick={() => setActive(i)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left whitespace-nowrap lg:whitespace-normal transition-all ${
-                    active === i ? `${p.color} text-white shadow-lg` : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left whitespace-nowrap lg:whitespace-normal transition-all ${active === i ? `${p.color} text-white shadow-lg` : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                    }`}
                 >
                   <p.icon size={16} className={active === i ? "text-white" : "text-slate-400"} />
                   {p.title}
@@ -1102,6 +1103,12 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [showQR, setShowQR] = useState<string | null>(null);
+  const [programName, setProgramName] = useState("");
+  const [programDescription, setProgramDescription] = useState("");
+  const [totalFund, setTotalFund] = useState("");
+  const [beneficiaries, setBeneficiaries] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
 
   const filteredPrograms = PROGRAMS.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -1115,6 +1122,37 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
     { label: "Funds Released", value: "$8.4M", sub: "of $9.6M total", icon: BarChart3, color: "bg-[#2BB673]" },
     { label: "Pending Verifications", value: "142", sub: "Last 24 hours", icon: Clock, color: "bg-amber-500" },
   ];
+
+  const handleCreateProgram = async () => {
+    try {
+      setIsCreating(true);
+
+      const programId = await createProgram(
+        programName,
+        programDescription,
+        BigInt(totalFund)
+      );
+
+      const verificationLink = `${window.location.origin}/verify/${programId}`;
+
+      setShowQR(verificationLink);
+
+      setShowCreateModal(false);
+
+      alert(`Program #${programId} berhasil dibuat!`);
+    } catch (err: any) {
+      console.error("CREATE PROGRAM ERROR:", err);
+
+      alert(
+        err?.shortMessage ||
+        err?.reason ||
+        err?.message ||
+        JSON.stringify(err)
+      );
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex font-[Inter,sans-serif]">
@@ -1139,11 +1177,10 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
             <button
               key={item.tab}
               onClick={() => setActiveTab(item.tab as typeof activeTab)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
-                activeTab === item.tab
-                  ? "bg-[#102A43] text-white font-medium"
-                  : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-              }`}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${activeTab === item.tab
+                ? "bg-[#102A43] text-white font-medium"
+                : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                }`}
             >
               <item.icon size={16} />
               {item.label}
@@ -1194,11 +1231,10 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
               <button
                 key={item.tab}
                 onClick={() => setActiveTab(item.tab as typeof activeTab)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                  activeTab === item.tab
-                    ? "bg-[#102A43] text-white"
-                    : "bg-white border border-slate-200 text-slate-500"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${activeTab === item.tab
+                  ? "bg-[#102A43] text-white"
+                  : "bg-white border border-slate-200 text-slate-500"
+                  }`}
               >
                 <item.icon size={14} />
                 {item.label}
@@ -1498,6 +1534,28 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
                     <input
                       type={field.type}
                       placeholder={field.placeholder}
+                      value={
+                        field.label === "Program Name"
+                          ? programName
+                          : field.label === "Total Budget (USD)"
+                            ? totalFund
+                            : field.label === "Number of Beneficiaries"
+                              ? beneficiaries
+                              : field.label === "Program Start Date"
+                                ? startDate
+                                : ""
+                      }
+                      onChange={(e) => {
+                        if (field.label === "Program Name") {
+                          setProgramName(e.target.value);
+                        } else if (field.label === "Total Budget (USD)") {
+                          setTotalFund(e.target.value);
+                        } else if (field.label === "Number of Beneficiaries") {
+                          setBeneficiaries(e.target.value);
+                        } else if (field.label === "Program Start Date") {
+                          setStartDate(e.target.value);
+                        }
+                      }}
                       className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#102A43] focus:ring-1 focus:ring-[#102A43]/20 transition-all"
                     />
                   </div>
@@ -1506,6 +1564,8 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">Description</label>
                   <textarea
                     rows={3}
+                    value={programDescription}
+                    onChange={(e) => setProgramDescription(e.target.value)}
                     placeholder="Describe the program objective and eligibility criteria…"
                     className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#102A43] resize-none"
                   />
@@ -1515,9 +1575,13 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
                 <button onClick={() => setShowCreateModal(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-all">
                   Cancel
                 </button>
-                <button onClick={() => setShowCreateModal(false)} className="flex-1 py-2.5 bg-[#102A43] text-white text-sm font-medium rounded-xl hover:bg-[#1a3a57] transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={handleCreateProgram}
+                  disabled={isCreating}
+                  className="flex-1 py-2.5 bg-[#102A43] text-white text-sm font-medium rounded-xl hover:bg-[#1a3a57] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
                   <Lock size={14} />
-                  Sign & Deploy
+                  {isCreating ? "Creating..." : "Sign & Deploy"}
                 </button>
               </div>
             </motion.div>
@@ -1527,28 +1591,44 @@ function Dashboard({ walletState, walletAddress, onConnect, onDisconnect, onBack
 
       {/* QR Modal */}
       <AnimatePresence>
-        {showQR && (
-          <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowQR(null)} />
-            <motion.div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center border border-slate-100" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}>
-              <button onClick={() => setShowQR(null)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X size={16} /></button>
-              <div className="w-48 h-48 mx-auto bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-center mb-5">
-                <div className="grid grid-cols-5 gap-0.5 p-3 opacity-60">
-                  {Array.from({ length: 25 }, (_, i) => (
-                    <div key={i} className={`w-full aspect-square rounded-sm ${Math.random() > 0.5 ? "bg-[#102A43]" : "bg-transparent"}`} />
-                  ))}
+        {showQR && (() => {
+          // Normalise: if showQR is already a full URL use it, otherwise build one from the program ID
+          const verifyUrl = showQR.startsWith("http")
+            ? showQR
+            : `${window.location.origin}/verify/${showQR.replace("PRG-", "")}`;
+          return (
+            <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowQR(null)} />
+              <motion.div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm p-8 text-center border border-slate-100" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}>
+                <button onClick={() => setShowQR(null)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"><X size={16} /></button>
+                <div className="w-48 h-48 mx-auto bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-center mb-5 overflow-hidden p-2">
+                  <QRCodeGenerator url={verifyUrl} />
                 </div>
-              </div>
-              <h3 className="text-base font-semibold text-slate-900 mb-1">Verification QR Code</h3>
-              <p className="text-xs text-slate-400 mb-5">Program <span className="font-mono">{showQR}</span></p>
-              <p className="text-xs text-slate-500 mb-5">Scan this QR code to instantly verify fund distribution for this program on any device — no account required.</p>
-              <button className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#102A43] text-white text-sm font-medium rounded-xl hover:bg-[#1a3a57] transition-all">
-                <Download size={15} />
-                Download QR Code
-              </button>
+                <h3 className="text-base font-semibold text-slate-900 mb-1">Verification QR Code</h3>
+                <p className="text-xs text-slate-400 mb-2">Program <span className="font-mono">{showQR}</span></p>
+                <p className="text-xs text-slate-500 mb-5">Scan this QR code to instantly verify fund distribution for this program on any device — no account required.</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigator.clipboard.writeText(verifyUrl)}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 border border-slate-200 text-slate-600 text-sm font-medium rounded-xl hover:bg-slate-50 transition-all"
+                  >
+                    <Copy size={14} />
+                    Copy Link
+                  </button>
+                  <a
+                    href={verifyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#102A43] text-white text-sm font-medium rounded-xl hover:bg-[#1a3a57] transition-all"
+                  >
+                    <ExternalLink size={14} />
+                    Open Link
+                  </a>
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
+          );
+        })()}
       </AnimatePresence>
     </div>
   );
@@ -1725,179 +1805,6 @@ function BeneficiaryPortal({ walletState, walletAddress, onConnect, onDisconnect
 
 // ─── Screen: Public Verification ─────────────────────────────────────────────
 
-function PublicVerification({ onBack }: { onBack: () => void }) {
-  const [query, setQuery] = useState("PRG-001");
-  const [searched, setSearched] = useState(true);
-
-  const program = PROGRAMS.find(p => p.id === query || p.name.toLowerCase().includes(query.toLowerCase())) ?? PROGRAMS[0];
-
-  return (
-    <div className="min-h-screen bg-[#F8FAFC] font-[Inter,sans-serif]">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-20">
-        <div className="max-w-4xl mx-auto px-5 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400"><ArrowLeft size={16} /></button>
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#102A43] rounded-lg flex items-center justify-center">
-                <Shield size={13} className="text-[#2BB673]" />
-              </div>
-              <span className="text-sm font-semibold text-slate-900">FundTrust</span>
-            </div>
-          </div>
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full">
-            <Globe size={12} className="text-slate-400" />
-            <span className="text-xs text-slate-500">Public Verification — No account required</span>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-5 py-10">
-        {/* Search */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-[#102A43] mb-2">Verify Fund Distribution</h1>
-          <p className="text-slate-500 text-sm mb-8">Enter a Program ID, Transaction ID, or digital identity address</p>
-          <div className="flex gap-2 max-w-xl mx-auto">
-            <div className="relative flex-1">
-              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="PRG-001 or Transaction ID…"
-                className="w-full pl-10 pr-4 py-3 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#102A43] focus:ring-1 focus:ring-[#102A43]/20 transition-all"
-                onKeyDown={e => { if (e.key === "Enter") setSearched(true); }}
-              />
-            </div>
-            <button
-              onClick={() => setSearched(true)}
-              className="px-5 py-3 bg-[#102A43] text-white text-sm font-medium rounded-xl hover:bg-[#1a3a57] transition-all"
-            >
-              Verify
-            </button>
-          </div>
-        </div>
-
-        {searched && program && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-            {/* Verification Badge */}
-            <div className="bg-white rounded-2xl border-2 border-[#2BB673]/30 p-6">
-              <div className="flex items-start justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#2BB673]/10 rounded-2xl flex items-center justify-center">
-                    <Shield size={24} className="text-[#2BB673]" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <CheckCircle2 size={16} className="text-[#2BB673]" />
-                      <span className="text-sm font-semibold text-[#2BB673]">Blockchain Verified</span>
-                    </div>
-                    <h2 className="text-xl font-bold text-slate-900">{program.name}</h2>
-                    <p className="text-xs text-slate-400 mt-0.5 font-mono">{program.id}</p>
-                  </div>
-                </div>
-                <StatusBadge status={program.status} />
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[
-                { label: "Total Budget", value: fmt(program.budget) },
-                { label: "Funds Released", value: fmt(program.released) },
-                { label: "Beneficiaries", value: program.beneficiaries.toLocaleString() },
-                { label: "Progress", value: `${pct(program.released, program.budget)}%` },
-              ].map(s => (
-                <div key={s.label} className="bg-white rounded-2xl border border-slate-200 p-4 text-center">
-                  <p className="text-xl font-bold text-[#102A43]">{s.value}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{s.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Timeline + Blockchain Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {/* Timeline */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                <h3 className="text-sm font-semibold text-slate-900 mb-5">Verification Timeline</h3>
-                <div className="flex flex-col gap-0">
-                  {[
-                    { label: "Created", date: "Jul 1, 2024", done: true },
-                    { label: "Allocated", date: "Jul 3, 2024", done: true },
-                    { label: "Released", date: "Aug 5, 2024", done: true },
-                    { label: "Confirmed", date: program.status === "completed" ? "Aug 12, 2024" : "Pending", done: program.status === "completed" },
-                  ].map((step, i) => (
-                    <div key={step.label} className="flex gap-3">
-                      <div className="flex flex-col items-center">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${step.done ? "bg-[#2BB673]" : "bg-slate-100 border border-slate-200"}`}>
-                          {step.done ? <Check size={11} className="text-white" /> : <Clock size={10} className="text-slate-400" />}
-                        </div>
-                        {i < 3 && <div className={`w-0.5 h-7 my-1 ${step.done ? "bg-[#2BB673]" : "bg-slate-100"}`} />}
-                      </div>
-                      <div className="pb-5">
-                        <p className="text-sm font-medium text-slate-800">{step.label}</p>
-                        <p className="text-xs text-slate-400">{step.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Blockchain Details */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4">Blockchain Record</h3>
-                <div className="space-y-3">
-                  {[
-                    { label: "Transaction ID", value: program.txId, mono: true },
-                    { label: "Network", value: "BOT Chain Testnet", mono: false },
-                    { label: "Block Number", value: "#18,924,501", mono: true },
-                    { label: "Timestamp", value: "2024-07-01 09:14:22 UTC", mono: false },
-                    { label: "Record Type", value: "Cannot Be Modified", mono: false },
-                  ].map(item => (
-                    <div key={item.label} className="flex items-start justify-between gap-3">
-                      <span className="text-xs text-slate-400 flex-shrink-0">{item.label}</span>
-                      <span className={`text-xs text-slate-700 text-right ${item.mono ? "font-mono" : "font-medium"}`}>
-                        {item.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 pt-4 border-t border-slate-100 flex gap-2">
-                  <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-slate-200 rounded-xl text-xs text-slate-600 hover:bg-slate-50 transition-all">
-                    <ExternalLink size={13} />
-                    View on Explorer
-                  </button>
-                  <CopyButton text={program.txId} />
-                </div>
-              </div>
-            </div>
-
-            {/* Transactions */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-              <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                <h3 className="text-sm font-semibold text-slate-900">Recent Transactions</h3>
-                <button className="flex items-center gap-1.5 text-xs text-[#2BB673] font-medium hover:underline">
-                  View all <ChevronRight size={12} />
-                </button>
-              </div>
-              <div className="divide-y divide-slate-100">
-                {TRANSACTIONS.slice(0, 3).map(tx => (
-                  <div key={tx.id} className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50/50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-mono text-slate-600 truncate">{tx.id.slice(0, 32)}…</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{tx.time} · {tx.recipient}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-slate-800 whitespace-nowrap">${tx.amount.toLocaleString()}</p>
-                    <StatusBadge status={tx.status} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </main>
-    </div>
-  );
-}
-
 // ─── Screen: Explorer ─────────────────────────────────────────────────────────
 
 function Explorer({ onBack }: { onBack: () => void }) {
@@ -1974,11 +1881,10 @@ function Explorer({ onBack }: { onBack: () => void }) {
               <button
                 key={f}
                 onClick={() => setActiveFilter(f)}
-                className={`px-3 py-2 rounded-xl text-xs font-medium capitalize whitespace-nowrap transition-all ${
-                  activeFilter === f
-                    ? "bg-[#102A43] text-white"
-                    : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
-                }`}
+                className={`px-3 py-2 rounded-xl text-xs font-medium capitalize whitespace-nowrap transition-all ${activeFilter === f
+                  ? "bg-[#102A43] text-white"
+                  : "bg-white border border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
               >
                 {f === "all" ? "All Transactions" : f}
               </button>
@@ -2048,9 +1954,8 @@ function Explorer({ onBack }: { onBack: () => void }) {
               <button
                 key={p}
                 onClick={() => setCurrentPage(p)}
-                className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
-                  currentPage === p ? "bg-[#102A43] text-white" : "border border-slate-200 text-slate-500 hover:bg-slate-50"
-                }`}
+                className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${currentPage === p ? "bg-[#102A43] text-white" : "border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  }`}
               >
                 {p}
               </button>
@@ -2144,11 +2049,10 @@ function NavBar({ current, onChange }: { current: Screen; onChange: (s: Screen) 
           <button
             key={item.screen}
             onClick={() => onChange(item.screen)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-              current === item.screen
-                ? "bg-[#2BB673] text-white"
-                : "text-slate-300 hover:text-white hover:bg-white/10"
-            }`}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all ${current === item.screen
+              ? "bg-[#2BB673] text-white"
+              : "text-slate-300 hover:text-white hover:bg-white/10"
+              }`}
           >
             <item.icon size={14} />
             <span className="hidden sm:block">{item.label}</span>
@@ -2162,11 +2066,16 @@ function NavBar({ current, onChange }: { current: Screen; onChange: (s: Screen) 
 // ─── Root App ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("landing");
+  const [screen, setScreen] = useState<Screen>(() => {
+    if (typeof window !== "undefined" && window.location.pathname.startsWith("/verify/")) return "verification";
+    return "landing";
+  });
   const [walletState, setWalletState] = useState<WalletState>("disconnected");
   const [walletAddress] = useState("0x7f3aB29E4C2D5F6A7B8E9C0D1E2F3A4B5C6D7E8");
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [txState, setTxState] = useState<TxState>("idle");
+  const [verificationUrl, setVerificationUrl] = useState("");
+  const [showQRCode, setShowQRCode] = useState(false);
 
   const handleConnect = () => setShowConnectModal(true);
 
@@ -2181,7 +2090,7 @@ export default function App() {
   if (walletState === "wrong-network") {
     return (
       <>
-        <WalletOnboarding state="wrong-network" onSwitch={() => setWalletState("connected")} onRetry={() => {}} />
+        <WalletOnboarding state="wrong-network" onSwitch={() => setWalletState("connected")} onRetry={() => { }} />
         <NavBar current={screen} onChange={setScreen} />
       </>
     );
@@ -2190,7 +2099,7 @@ export default function App() {
   if (walletState === "no-metamask") {
     return (
       <>
-        <WalletOnboarding state="no-metamask" onSwitch={() => {}} onRetry={() => setWalletState("disconnected")} />
+        <WalletOnboarding state="no-metamask" onSwitch={() => { }} onRetry={() => setWalletState("disconnected")} />
         <NavBar current={screen} onChange={setScreen} />
       </>
     );
