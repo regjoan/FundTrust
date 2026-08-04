@@ -2,6 +2,7 @@ import {
     BrowserProvider,
     JsonRpcProvider,
     Contract,
+    isAddress,
     type BrowserProvider as BrowserProviderType,
     type JsonRpcProvider as JsonRpcProviderType,
 } from "ethers";
@@ -13,7 +14,7 @@ import FundTrustABI from "../abi/FundTrust.json";
 // ===============================
 
 export const CONTRACT_ADDRESS =
-    "0xC92a46Ce8907a1D2F8070B06F98700E7cfB39Efc";
+    "0xC92a46Ce8907a1D2F8070B06F98700E7cfB39Efc"; // TODO: replace with actual address after deployment
 
 export const RPC_URL = "https://rpc.bohr.life";
 
@@ -38,6 +39,10 @@ export const publicProvider: JsonRpcProviderType =
 // ===============================
 // PUBLIC CONTRACT
 // ===============================
+
+
+console.log("Address =", CONTRACT_ADDRESS);
+console.log("isAddress =", isAddress(CONTRACT_ADDRESS));
 
 export const publicContract = new Contract(
     CONTRACT_ADDRESS,

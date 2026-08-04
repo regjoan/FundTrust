@@ -4,6 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
+    "compile": "npx -y solcjs --abi --bin --optimize -o build FundTrust.sol && cp build/FundTrust_sol_FundTrust.abi src/app/components/abi/FundTrust.json",
+    "postcompile": "cp build/FundTrust_sol_FundTrust.abi src/app/components/abi/FundTrust.json",
     "build": "vite build",
     "dev": "vite"
   },

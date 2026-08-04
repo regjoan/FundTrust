@@ -6,7 +6,7 @@ import { getProgram, getProgramRecipients, getProgramTimeline } from "./contract
 const fmt = (n: number) => n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : n >= 1000 ? `$${(n / 1000).toFixed(0)}K` : `$${n}`;
 const pct = (a: number, b: number) => b === 0 ? 0 : Math.round((a / b) * 100);
 
-function formatDate(ts: number | undefined): string {
+function formatDateUTC(ts: number | undefined): string {
   if (!ts) return "—";
   return new Date(ts * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
@@ -93,7 +93,7 @@ export default function PublicVerification({ onBack }: { onBack: () => void }) {
         txId = (ev as any).transactionHash ?? txId;
         try {
           const block = await ev.getBlock();
-          if (block?.timestamp) createdDate = formatDate(Number(block.timestamp));
+          if (block?.timestamp) createdDate = formatDateUTC(Number(block.timestamp));
         } catch { /* ignore */ }
       }
 
@@ -104,13 +104,13 @@ export default function PublicVerification({ onBack }: { onBack: () => void }) {
 
       if (timeline) {
         if (timeline.allocated.length > 0) {
-          try { const b = await timeline.allocated[0].getBlock(); if (b?.timestamp) allocatedDate = formatDate(Number(b.timestamp)); } catch { /* ignore */ }
+          try { const b = await timeline.allocated[0].getBlock(); if (b?.timestamp) allocatedDate = formatDateUTC(Number(b.timestamp)); } catch { /* ignore */ }
         }
         if (timeline.released.length > 0) {
-          try { const b = await timeline.released[0].getBlock(); if (b?.timestamp) releasedDate = formatDate(Number(b.timestamp)); } catch { /* ignore */ }
+          try { const b = await timeline.released[0].getBlock(); if (b?.timestamp) releasedDate = formatDateUTC(Number(b.timestamp)); } catch { /* ignore */ }
         }
         if (timeline.claimed.length > 0) {
-          try { const b = await timeline.claimed[timeline.claimed.length - 1].getBlock(); if (b?.timestamp) claimedDate = formatDate(Number(b.timestamp)); } catch { /* ignore */ }
+          try { const b = await timeline.claimed[timeline.claimed.length - 1].getBlock(); if (b?.timestamp) claimedDate = formatDateUTC(Number(b.timestamp)); } catch { /* ignore */ }
         }
       }
 
@@ -122,7 +122,7 @@ export default function PublicVerification({ onBack }: { onBack: () => void }) {
           let time = "—";
           try {
             const b = await ev.getBlock();
-            if (b?.timestamp) time = formatDate(Number(b.timestamp));
+            if (b?.timestamp) time = formatDateUTC(Number(b.timestamp));
           } catch { /* ignore */ }
             recentTxs.push({
               id: (ev as any).transactionHash ?? "—",
