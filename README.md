@@ -1,10 +1,8 @@
 # FundTrust
 
-FundTrust is a frontend prototype for a public fund-distribution application. It is designed to help government agencies, NGOs, beneficiaries, journalists, auditors, and citizens clearly see how aid money is assigned and distributed.
+FundTrust is DApp for a public fund-distribution application. It is designed to help government agencies, NGOs, beneficiaries, journalists, auditors, and citizens clearly see how aid money is assigned and distributed.
 
 The main idea is simple: important distribution events can be recorded on a public blockchain, allowing people to verify the record for themselves instead of relying only on reports from the organisation running the program.
-
-This repository currently contains the **user interface and user experience** for FundTrust. It uses mock data and simulated wallet/transaction states. It is **not yet connected** to a live blockchain, smart contract, backend, payment system, or real MetaMask wallet.
 
 ---
 
