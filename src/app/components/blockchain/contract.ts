@@ -40,7 +40,6 @@ export const publicContract = new Contract(
 // ===============================
 // CONNECT WALLET
 // ===============================
-
 export async function connectWallet() {
   const ethereum = (window as any).ethereum;
 
@@ -54,11 +53,14 @@ export async function connectWallet() {
 
   const signer = await provider.getSigner();
 
+  const address = await signer.getAddress();
+
   const contract = new Contract(CONTRACT_ADDRESS, ABI, signer);
 
   return {
     provider,
     signer,
+    address,
     contract,
   };
 }
@@ -87,10 +89,33 @@ export async function createProgram(
 // GET PROGRAM
 // ===============================
 
-export async function getProgram(programId: number) {
-  return await publicContract.getProgram(programId);
-}
+// ===============================
+// GET PROGRAM
+// ===============================
 
+export async function getProgram(programId: number) {
+  const [
+    id,
+    creator,
+    title,
+    description,
+    totalFund,
+    depositedFund,
+    remainingFund,
+    active,
+  ] = await publicContract.getProgram(programId);
+
+  return {
+    id: Number(id),
+    creator,
+    title,
+    description,
+    totalFund,
+    depositedFund,
+    remainingFund,
+    active,
+  };
+}
 // ===============================
 // GET CONTRACT BALANCE
 // ===============================
