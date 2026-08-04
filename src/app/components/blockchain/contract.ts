@@ -13,7 +13,7 @@ import FundTrustABI from "../abi/FundTrust.json";
 // ===============================
 
 export const CONTRACT_ADDRESS =
-    "0x07da61c70a82BB9CA1c81937cD6a9a5B419487DA";
+    "0xC92a46Ce8907a1D2F8070B06F98700E7cfB39Efc";
 
 export const RPC_URL = "https://rpc.bohr.life";
 
