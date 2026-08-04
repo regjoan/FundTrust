@@ -260,8 +260,6 @@ No account, password, or wallet is required.
 7. Open **Transactions** to review released funds and transaction statuses.
 8. Use public verification or the explorer when a shareable record is needed.
 
-In the current prototype, wallet connection is simulated.
-
 ### How a Beneficiary checks their support
 
 1. Open the **Beneficiary Portal**.
@@ -332,40 +330,35 @@ Instead, a production system should store only the minimum public information or
 
 ---
 
-## Technology used
-
-FundTrust uses:
-
-- **React 18** for the application interface
-- **TypeScript** for typed application code
-- **Vite** for development and builds
-- **Tailwind CSS** for responsive styling
-- **Lucide React** for interface icons
-- **Motion** for transitions and animation
-- **Radix UI** primitives for accessible UI components
-
-The visual design uses a calm, institutional style with navy and emerald colors, clear typography, accessible contrast, and straightforward language.
-
-The goal is to make public accountability feel credible and understandable, without crypto-trading visuals or unnecessary jargon.
-
----
-
 ## Project structure
 
 ```text
 .
 ├── src/
 │   ├── app/
-│   │   ├── App.tsx             # Main FundTrust application and screen logic
-│   │   └── components/ui/      # Reusable UI components
-│   └── styles/
-│       ├── fonts.css           # Font imports
-│       ├── theme.css           # Design tokens and colors
-│       ├── index.css           # Tailwind setup
-│       └── globals.css         # Global project styles
-├── README.md                   # Project documentation
-├── package.json                # Dependencies and scripts
-├── vite.config.ts              # Vite configuration
-├── postcss.config.mjs          # PostCSS configuration
-├── __figma__entrypoint__.ts    # Figma Make entry point
-└── ATTRIBUTIONS.md             # Third-party attribution information
+│   │   ├── App.tsx                    # Main FundTrust application and screen logic
+│   │   └── components/
+│   │       ├── blockchain/            # Blockchain integration (ethers.js, QR, verification)
+│   │       │   ├── contract.ts
+│   │       │   ├── PublicVerification.tsx
+│   │       │   └── QRCodeGenerator.tsx
+│   │       ├── abi/
+│   │       │   └── FundTrust.json     # Smart contract ABI
+│   │       └── ui/                    # Reusable UI components
+│   ├── styles/
+│   │   ├── fonts.css                  # Font imports
+│   │   ├── theme.css                  # Design tokens and colors
+│   │   ├── index.css                  # Tailwind setup
+│   │   └── globals.css                # Global project styles
+│   └── main.tsx                       # React entry point
+├── FundTrust.sol                      # Smart contract (Solidity)
+├── scripts/
+│   └── deploy.js                      # Contract deployment script
+├── build/                             # Compiled ABI and bytecode
+├── README.md                          # Project documentation
+├── package.json                       # Dependencies and scripts
+├── vite.config.ts                     # Vite configuration
+├── postcss.config.mjs                 # PostCSS configuration
+└── ATTRIBUTIONS.md                    # Third-party attribution information
+```
+
