@@ -1,7 +1,5 @@
 # FundTrust
 
-> **Don’t trust us. Verify it yourself.**
-
 FundTrust is a frontend prototype for a public fund-distribution application. It is designed to help government agencies, NGOs, beneficiaries, journalists, auditors, and citizens clearly see how aid money is assigned and distributed.
 
 The main idea is simple: important distribution events can be recorded on a public blockchain, allowing people to verify the record for themselves instead of relying only on reports from the organisation running the program.
