@@ -1,10 +1,9 @@
 import {
-    BrowserProvider,
-    JsonRpcProvider,
-    Contract,
-    isAddress,
-    type BrowserProvider as BrowserProviderType,
-    type JsonRpcProvider as JsonRpcProviderType,
+  BrowserProvider,
+  JsonRpcProvider,
+  Contract,
+  type BrowserProvider as BrowserProviderType,
+  type JsonRpcProvider as JsonRpcProviderType,
 } from "ethers";
 
 import FundTrustABI from "../abi/FundTrust.json";
@@ -13,41 +12,29 @@ import FundTrustABI from "../abi/FundTrust.json";
 // CONFIG
 // ===============================
 
-export const CONTRACT_ADDRESS =
-    "0xC92a46Ce8907a1D2F8070B06F98700E7cfB39Efc"; // TODO: replace with actual address after deployment
+export const CONTRACT_ADDRESS = "0xC92a46Ce8907a1D2F8070B06F98700E7cfB39Efc";
 
 export const RPC_URL = "https://rpc.bohr.life";
 
 export const CHAIN_ID = 968;
 
-// Jika JSON hasil Hardhat/Remix berbentuk
-// {
-//    abi: [...]
-// }
-// maka ambil field abi.
-// Kalau JSON hanya berupa array ABI,
-// maka gunakan langsung.
+// ABI
 const ABI = (FundTrustABI as any).abi ?? FundTrustABI;
 
 // ===============================
 // PUBLIC PROVIDER (NO METAMASK)
 // ===============================
 
-export const publicProvider: JsonRpcProviderType =
-    new JsonRpcProvider(RPC_URL);
+export const publicProvider: JsonRpcProviderType = new JsonRpcProvider(RPC_URL);
 
 // ===============================
 // PUBLIC CONTRACT
 // ===============================
 
-
-console.log("Address =", CONTRACT_ADDRESS);
-console.log("isAddress =", isAddress(CONTRACT_ADDRESS));
-
 export const publicContract = new Contract(
-    CONTRACT_ADDRESS,
-    ABI,
-    publicProvider
+  CONTRACT_ADDRESS,
+  ABI,
+  publicProvider,
 );
 
 // ===============================
@@ -55,27 +42,25 @@ export const publicContract = new Contract(
 // ===============================
 
 export async function connectWallet() {
-    if (!window.ethereum) {
-        throw new Error("MetaMask is not installed.");
-    }
+  const ethereum = (window as any).ethereum;
 
-    const provider = new BrowserProvider(window.ethereum);
+  if (!ethereum) {
+    throw new Error("MetaMask is not installed.");
+  }
 
-    await provider.send("eth_requestAccounts", []);
+  const provider = new BrowserProvider(ethereum);
 
-    const signer = await provider.getSigner();
+  await provider.send("eth_requestAccounts", []);
 
-    const contract = new Contract(
-        CONTRACT_ADDRESS,
-        ABI,
-        signer
-    );
+  const signer = await provider.getSigner();
 
-    return {
-        provider,
-        signer,
-        contract,
-    };
+  const contract = new Contract(CONTRACT_ADDRESS, ABI, signer);
+
+  return {
+    provider,
+    signer,
+    contract,
+  };
 }
 
 // ===============================
@@ -83,24 +68,19 @@ export async function connectWallet() {
 // ===============================
 
 export async function createProgram(
-    title: string,
-    description: string,
-    totalFund: number | bigint
+  title: string,
+  description: string,
+  totalFund: number | bigint,
 ) {
-    const { contract } = await connectWallet();
+  const { contract } = await connectWallet();
 
-    const tx = await contract.createProgram(
-        title,
-        description,
-        totalFund
-    );
+  const tx = await contract.createProgram(title, description, totalFund);
 
-    await tx.wait();
+  await tx.wait();
 
-    // Program ID terbaru
-    const programId = await contract.programCounter();
+  const programId = await contract.programCounter();
 
-    return Number(programId);
+  return Number(programId);
 }
 
 // ===============================
@@ -108,7 +88,7 @@ export async function createProgram(
 // ===============================
 
 export async function getProgram(programId: number) {
-    return await publicContract.getProgram(programId);
+  return await publicContract.getProgram(programId);
 }
 
 // ===============================
@@ -116,72 +96,55 @@ export async function getProgram(programId: number) {
 // ===============================
 
 export async function getContractBalance() {
-    return await publicContract.getContractBalance();
+  return await publicContract.getContractBalance();
 }
 
 // ===============================
 // GET RECIPIENTS
 // ===============================
 
-export async function getProgramRecipients(
-    programId: number
-) {
-    return await publicContract.getProgramRecipients(
-        programId
-    );
+export async function getProgramRecipients(programId: number) {
+  return await publicContract.getProgramRecipients(programId);
 }
 
 // ===============================
 // GET ALLOCATION
 // ===============================
 
-export async function getAllocation(
-    programId: number,
-    recipient: string
-) {
-    return await publicContract.getAllocation(
-        programId,
-        recipient
-    );
+export async function getAllocation(programId: number, recipient: string) {
+  return await publicContract.getAllocation(programId, recipient);
 }
 
 // ===============================
 // EVENT LOGS
 // ===============================
 
-export async function getProgramTimeline(
-    programId: number
-) {
-    const created =
-        await publicContract.queryFilter(
-            publicContract.filters.ProgramCreated(programId)
-        );
+export async function getProgramTimeline(programId: number) {
+  const created = await publicContract.queryFilter(
+    publicContract.filters.ProgramCreated(programId),
+  );
 
-    const deposited =
-        await publicContract.queryFilter(
-            publicContract.filters.FundDeposited(programId)
-        );
+  const deposited = await publicContract.queryFilter(
+    publicContract.filters.FundDeposited(programId),
+  );
 
-    const allocated =
-        await publicContract.queryFilter(
-            publicContract.filters.FundAllocated(programId)
-        );
+  const allocated = await publicContract.queryFilter(
+    publicContract.filters.FundAllocated(programId),
+  );
 
-    const released =
-        await publicContract.queryFilter(
-            publicContract.filters.FundReleased(programId)
-        );
+  const released = await publicContract.queryFilter(
+    publicContract.filters.FundReleased(programId),
+  );
 
-    const claimed =
-        await publicContract.queryFilter(
-            publicContract.filters.AidClaimed(programId)
-        );
+  const claimed = await publicContract.queryFilter(
+    publicContract.filters.AidClaimed(programId),
+  );
 
-    return {
-        created,
-        deposited,
-        allocated,
-        released,
-        claimed,
-    };
+  return {
+    created,
+    deposited,
+    allocated,
+    released,
+    claimed,
+  };
 }
